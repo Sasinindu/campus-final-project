@@ -1,0 +1,52 @@
+image: node:22.11.0
+ 
+definitions:
+  steps:
+    - step: &backend-build-lint-step
+        name: Build & Lint backend
+        caches:
+          - node
+        script:
+          - npm install
+          - npm run build
+ 
+    - step: &sonarqube-analysis-step
+        name: SonarQube analysis
+        script:
+          - pipe: sonarsource/sonarqube-scan:2.0.1
+            variables:
+              SONAR_HOST_URL: ${SONAR_HOST_URL}
+              SONAR_TOKEN: ${SONAR_TOKEN}
+
+    - step: &deploy-to-server
+        name: Deploy to AWS
+        deployment: production
+        script:
+          - apt-get update && apt-get install -y openssh-client
+          - mkdir -p ~/.ssh
+          - echo -e "$SSH_PRIVATE_KEY" | tr '\\n' '\n' > ~/.ssh/id_rsa
+          - chmod 755 ~/.ssh/id_rsa
+          - ssh-keygen -R $SERVER_IP
+          - ssh-keyscan -t rsa $SERVER_IP >> ~/.ssh/known_hosts
+          - >
+            ssh -o StrictHostKeyChecking=no ubuntu@$SERVER_IP "
+            cd /opt/quiz_bank_deployments/gp-academy-quiz-bank-be &&
+            sudo bash -c '
+            git pull https://Thusitha_premarathne:$BITBUCKET_TOKEN@bitbucket.org/avonet/gp-academy-quiz-bank-be.git &&
+            npm install &&
+            npm run build &&
+            pm2 describe quiz-bank > /dev/null &&
+            pm2 reload ecosystem.config.js --env qa || pm2 start ecosystem.config.js --env qa
+            '
+            "
+ 
+pipelines:
+  branches:
+    develop:
+      - parallel:
+          - step: *backend-build-lint-step
+          - step: *sonarqube-analysis-step
+ 
+  custom:
+    deploy-server:
+      - step: *deploy-to-server
