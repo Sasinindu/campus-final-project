@@ -197,15 +197,41 @@ export interface AIPredictionFilters {
 
 // Dashboard types
 export interface DashboardSummary {
-  total_patients: number;
-  total_doctors: number;
-  total_metrics: number;
-  total_predictions: number;
-  recent_alerts: number;
-  critical_patients: number;
+  totalPatients: {
+    count: number;
+    changeLastMonth: number;
+  };
+  aiPredictions: {
+    total: number;
+    highRiskCases: number;
+  };
+  highRiskAlerts: {
+    total: number;
+    newSinceYesterday: number;
+  };
+  healthMetrics: {
+    total: number;
+    changeThisWeek: number;
+  };
 }
 
-export interface DoctorDashboardData extends DashboardSummary {
+export interface DoctorDashboardData {
+  totalPatients: {
+    count: number;
+    changeLastMonth: number;
+  };
+  aiPredictions: {
+    total: number;
+    highRiskCases: number;
+  };
+  highRiskAlerts: {
+    total: number;
+    newSinceYesterday: number;
+  };
+  healthMetrics: {
+    total: number;
+    changeThisWeek: number;
+  };
   my_patients: number;
   pending_appointments: number;
   recent_predictions: number;
@@ -220,7 +246,23 @@ export interface PatientDashboardData {
   alerts: any[];
 }
 
-export interface OfficialDashboardData extends DashboardSummary {
+export interface OfficialDashboardData {
+  totalPatients: {
+    count: number;
+    changeLastMonth: number;
+  };
+  aiPredictions: {
+    total: number;
+    highRiskCases: number;
+  };
+  highRiskAlerts: {
+    total: number;
+    newSinceYesterday: number;
+  };
+  healthMetrics: {
+    total: number;
+    changeThisWeek: number;
+  };
   regional_stats: any[];
   disease_prevalence: any[];
   population_health: any[];

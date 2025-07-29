@@ -1,9 +1,9 @@
-import { Repository } from 'typeorm';
+import { Repository, MoreThanOrEqual, Between } from 'typeorm';
 import { AppDataSource } from '../config/database';
 import { Patient } from '../entities/Patient';
 import { User } from '../entities/User';
 import { HealthMetric } from '../entities/HealthMetric';
-import { AIPrediction } from '../entities/AIPrediction';
+import { AIPrediction, RiskLevel } from '../entities/AIPrediction';
 import { Alert } from '../entities/Alert';
 import { Medication } from '../entities/Medication';
 import {
@@ -33,33 +33,74 @@ export class DashboardService {
 
   async getDashboardSummary(): Promise<DashboardSummary> {
     try {
+      // Get basic counts
       const [
         totalPatients,
-        totalDoctors,
         totalMetrics,
         totalPredictions,
-        recentAlerts,
-        criticalPatients,
+        highRiskPredictions,
+        totalAlerts,
+        newAlertsSinceYesterday,
       ] = await Promise.all([
         this.patientRepository.count({ where: { is_active: true } }),
-        this.userRepository.count({
-          where: { userRole: 'doctor', isActive: true },
-        }),
         this.healthMetricRepository.count(),
         this.aiPredictionRepository.count(),
-        this.alertRepository.count({ where: { is_read: false } }),
-        this.patientRepository.count({ where: { is_active: true } }), // Placeholder for critical patients
+        this.aiPredictionRepository.count({
+          where: { risk_level: RiskLevel.HIGH },
+        }),
+        this.aiPredictionRepository.count({
+          where: { is_alert: true },
+        }),
+        this.aiPredictionRepository.count({
+          where: { 
+            is_alert: true,
+            created_at: MoreThanOrEqual(new Date(Date.now() - 24 * 60 * 60 * 1000))
+          },
+        }),
       ]);
 
+      // Calculate changes (simplified)
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+      const patientsLastMonth = await this.patientRepository.count({
+        where: { 
+          is_active: true,
+          created_at: MoreThanOrEqual(oneMonthAgo)
+        },
+      });
+
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 7);
+      
+      const metricsThisWeek = await this.healthMetricRepository.count({
+        where: {
+          created_at: Between(startOfWeek, endOfWeek),
+        },
+      });
+
       return {
-        total_patients: totalPatients,
-        total_doctors: totalDoctors,
-        total_metrics: totalMetrics,
-        total_predictions: totalPredictions,
-        recent_alerts: recentAlerts,
-        critical_patients: criticalPatients,
+        totalPatients: {
+          count: totalPatients,
+          changeLastMonth: patientsLastMonth,
+        },
+        aiPredictions: {
+          total: totalPredictions,
+          highRiskCases: highRiskPredictions,
+        },
+        highRiskAlerts: {
+          total: totalAlerts,
+          newSinceYesterday: newAlertsSinceYesterday,
+        },
+        healthMetrics: {
+          total: totalMetrics,
+          changeThisWeek: metricsThisWeek,
+        },
       };
-    } catch {
+    } catch (error) {
+      console.error('Error in getDashboardSummary:', error);
       throw new AppError('Failed to get dashboard summary', 500);
     }
   }
@@ -81,7 +122,10 @@ export class DashboardService {
       ]);
 
       return {
-        ...summary,
+        totalPatients: summary.totalPatients,
+        aiPredictions: summary.aiPredictions,
+        highRiskAlerts: summary.highRiskAlerts,
+        healthMetrics: summary.healthMetrics,
         my_patients: myPatients,
         pending_appointments: 0, // Removed appointments
         recent_predictions: recentPredictions,
@@ -153,7 +197,10 @@ export class DashboardService {
         ]);
 
       return {
-        ...summary,
+        totalPatients: summary.totalPatients,
+        aiPredictions: summary.aiPredictions,
+        highRiskAlerts: summary.highRiskAlerts,
+        healthMetrics: summary.healthMetrics,
         regional_stats: regionalStats.map((item) => ({
           region: item.region,
           count: parseInt(item.count),

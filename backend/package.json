@@ -10,7 +10,8 @@
     "seed": "ts-node src/scripts/seedData.ts",
     "add-predictions": "ts-node src/scripts/addAIPredictions.ts",
     "add-patients": "ts-node src/scripts/addPatients.ts",
-    "add-ai-predictions": "ts-node src/scripts/addAIPredictions.ts"
+    "add-ai-predictions": "ts-node src/scripts/addAIPredictions.ts",
+    "add-health-metrics": "ts-node src/scripts/addHealthMetrics.ts"
   },
   "keywords": [
     "quiz",
