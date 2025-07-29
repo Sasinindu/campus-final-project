@@ -10,6 +10,8 @@ import doctorPatientRoutes from './doctorPatient.routes';
 import aiPredictionsRoutes from './aiPredictions.routes';
 import healthMetricsAnalysisRoutes from './healthMetricsAnalysis.routes';
 import dashboardSummaryRoutes from './dashboardSummary.routes';
+import officerRoutes from './officer.routes';
+import aiHealthPredictionRoutes from './aiHealthPrediction.routes';
 
 const router = Router();
 
@@ -24,5 +26,7 @@ router.use('/doctor/patients', doctorPatientRoutes);
 router.use('/ai-predictions', aiPredictionsRoutes);
 router.use('/health-metrics-analysis', healthMetricsAnalysisRoutes);
 router.use('/dashboard', dashboardSummaryRoutes);
+router.use('/officer', officerRoutes);
+router.use('/ai-health-prediction', aiHealthPredictionRoutes);
 
 export default router;

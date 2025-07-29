@@ -23,9 +23,9 @@ export class DoctorPatientController {
         throw new ValidationError('User not authenticated');
       }
 
-      // Check if user is a doctor
-      if (user.userRole !== UserRole.DOCTOR) {
-        throw new ValidationError('Access denied. Only doctors can view patient data.');
+      // Check if user is a doctor or official
+      if (user.userRole !== UserRole.DOCTOR && user.userRole !== UserRole.OFFICIAL) {
+        throw new ValidationError('Access denied. Only doctors and officers can view patient data.');
       }
 
       const { page = 1, limit = 10, search, riskLevel, hasAlerts } = req.query;
@@ -60,9 +60,9 @@ export class DoctorPatientController {
         throw new ValidationError('User not authenticated');
       }
 
-      // Check if user is a doctor
-      if (user.userRole !== UserRole.DOCTOR) {
-        throw new ValidationError('Access denied. Only doctors can view patient data.');
+      // Check if user is a doctor or official
+      if (user.userRole !== UserRole.DOCTOR && user.userRole !== UserRole.OFFICIAL) {
+        throw new ValidationError('Access denied. Only doctors and officers can view patient data.');
       }
 
       const { patientId } = req.params;

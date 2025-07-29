@@ -177,26 +177,113 @@ export class DoctorPatientService {
         order: { created_at: 'DESC' },
       });
 
-      if (prediction) {
-        return prediction.prediction_type || 'General Health';
+      if (prediction && prediction.factors && prediction.factors.length > 0) {
+        // Use the first identified factor as primary condition
+        const primaryFactor = prediction.factors[0];
+        
+        // Map common factors to meaningful condition names
+        const conditionMap: { [key: string]: string } = {
+          'hypertension': 'Hypertension',
+          'hyperlipidemia': 'High Cholesterol',
+          'diabetes': 'Diabetes',
+          'obesity': 'Obesity',
+          'cardiovascular disease': 'Heart Disease',
+          'respiratory issues': 'Respiratory Condition',
+          'liver disease': 'Liver Condition',
+          'kidney disease': 'Kidney Condition',
+          'osteoporosis': 'Osteoporosis',
+          'arthritis': 'Arthritis',
+          'anemia': 'Anemia',
+          'thyroid disorder': 'Thyroid Disorder',
+          'depression': 'Mental Health',
+          'anxiety': 'Mental Health',
+          'asthma': 'Asthma',
+          'copd': 'COPD',
+          'sleep apnea': 'Sleep Apnea',
+          'gastrointestinal': 'Digestive Issues',
+          'migraine': 'Migraine',
+          'chronic pain': 'Chronic Pain'
+        };
+
+        // Check for exact matches first
+        for (const [key, value] of Object.entries(conditionMap)) {
+          if (primaryFactor.toLowerCase().includes(key.toLowerCase())) {
+            return value;
+          }
+        }
+
+        // If no exact match, return a capitalized version of the factor
+        return primaryFactor.charAt(0).toUpperCase() + primaryFactor.slice(1);
       }
 
-      // Fallback to most recent health metric
-      const metric = await this.healthMetricRepository.findOne({
+      // Fallback to most recent health metrics to determine condition
+      const recentMetrics = await this.healthMetricRepository.find({
         where: { patient_id: patientId },
         order: { created_at: 'DESC' },
+        take: 10,
       });
 
-      if (metric) {
-        switch (metric.metric_type) {
-          case 'blood_glucose':
-            return 'Diabetes Management';
-          case 'blood_pressure':
+      if (recentMetrics.length > 0) {
+        // Analyze recent metrics to determine primary condition
+        const metricTypes = recentMetrics.map(m => m.metric_type);
+        const uniqueTypes = [...new Set(metricTypes)];
+        
+        // Check for specific conditions based on metric types
+        if (uniqueTypes.includes('blood_pressure')) {
+          const bpMetric = recentMetrics.find(m => m.metric_type === 'blood_pressure');
+          if (bpMetric && bpMetric.systolic_pressure && bpMetric.systolic_pressure > 140) {
             return 'Hypertension';
+          }
+        }
+        
+        if (uniqueTypes.includes('blood_sugar')) {
+          const sugarMetric = recentMetrics.find(m => m.metric_type === 'blood_sugar');
+          if (sugarMetric && sugarMetric.blood_sugar_fasting && sugarMetric.blood_sugar_fasting > 126) {
+            return 'Diabetes';
+          }
+        }
+        
+        if (uniqueTypes.includes('cholesterol')) {
+          const cholesterolMetric = recentMetrics.find(m => m.metric_type === 'cholesterol');
+          if (cholesterolMetric && cholesterolMetric.total_cholesterol && cholesterolMetric.total_cholesterol > 200) {
+            return 'High Cholesterol';
+          }
+        }
+        
+        if (uniqueTypes.includes('anthropometric')) {
+          const bmiMetric = recentMetrics.find(m => m.metric_type === 'anthropometric');
+          if (bmiMetric && bmiMetric.bmi && bmiMetric.bmi > 30) {
+            return 'Obesity';
+          }
+        }
+
+        // Return based on most common metric type
+        const metricTypeCounts: { [key: string]: number } = {};
+        metricTypes.forEach(type => {
+          metricTypeCounts[type] = (metricTypeCounts[type] || 0) + 1;
+        });
+
+        const mostCommonType = Object.keys(metricTypeCounts).reduce((a, b) => 
+          metricTypeCounts[a] > metricTypeCounts[b] ? a : b
+        );
+
+        switch (mostCommonType) {
+          case 'blood_pressure':
+            return 'Blood Pressure Monitoring';
+          case 'blood_sugar':
+            return 'Blood Sugar Monitoring';
+          case 'cholesterol':
+            return 'Cholesterol Management';
+          case 'vital_signs':
+            return 'Vital Signs Monitoring';
           case 'liver_function':
             return 'Liver Health';
+          case 'kidney_function':
+            return 'Kidney Health';
+          case 'anthropometric':
+            return 'Weight Management';
           default:
-            return 'General Health';
+            return 'General Health Monitoring';
         }
       }
 
