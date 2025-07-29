@@ -46,14 +46,31 @@ interface AIResponse {
 }
 
 export class AIHealthPredictionService {
-  private readonly openaiApiKey = process.env.OPENAI_API_KEY || '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';
+  private readonly openaiApiKey: string;
   private readonly openaiUrl = 'https://api.openai.com/v1/chat/completions';
 
   constructor(
     private patientRepository: Repository<Patient>,
     private healthMetricRepository: Repository<HealthMetric>,
     private aiPredictionRepository: Repository<AIPrediction>
-  ) {}
+  ) {
+    // Get API key from environment variables
+    const apiKey = process.env.OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.error('OPENAI_API_KEY is not set in environment variables');
+      console.error('Please add OPENAI_API_KEY to your .env.development, .env.production, or .env.qa file');
+      throw new Error('OPENAI_API_KEY environment variable is required for AI health predictions');
+    }
+    
+    if (apiKey.length < 20) {
+      console.error('OPENAI_API_KEY appears to be invalid (too short)');
+      throw new Error('Invalid OPENAI_API_KEY format');
+    }
+    
+    this.openaiApiKey = apiKey;
+    console.log('AIHealthPredictionService initialized with OpenAI API key');
+  }
 
   async generateHealthPrediction(patientId: number): Promise<AIPrediction> {
     try {
