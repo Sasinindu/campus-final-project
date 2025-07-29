@@ -19,9 +19,21 @@ export const authenticateJWT = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const token = req.cookies.token;
+  console.log('Cookies received:', req.cookies);
+  
+  // Try to get token from cookies first
+  let token = req.cookies.token;
+  
+  // If no cookie token, try Authorization header
+  if (!token) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
 
   if (!token) {
+    console.log('No token found in cookies or Authorization header');
     ResponseUtil.errorResponse(res, 401, 'Token cookie missing');
     return;
   }

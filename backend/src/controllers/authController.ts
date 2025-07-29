@@ -28,14 +28,14 @@ export default class AuthController {
       res.cookie('token', result.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         path: '/',
         maxAge: 1 * 60 * 60 * 1000,
       });
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         path: '/',
         maxAge: 2 * 60 * 60 * 1000,
       });
@@ -43,6 +43,8 @@ export default class AuthController {
       ResponseUtil.successResponse(res, {
         message: 'Login success',
         user: result.user,
+        token: result.token, // Also send token in response for localStorage
+        refreshToken: result.refreshToken,
       });
     } catch (error: any) {
       if (error instanceof CustomException) {
@@ -98,20 +100,22 @@ export default class AuthController {
       res.cookie('token', result.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // Use secure flag in production
-        sameSite: 'strict', // Adjust sameSite attribute as needed
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Adjust sameSite attribute as needed
         path: '/',
         maxAge: 1 * 60 * 60 * 1000,
       });
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
         path: '/',
         maxAge: 2 * 60 * 60 * 1000,
       });
 
       ResponseUtil.successResponse(res, {
         message: 'Token refreshed successfully.',
+        token: result.token,
+        refreshToken: result.refreshToken,
       });
     } catch (error: any) {
       if (error instanceof CustomException) {

@@ -5,7 +5,6 @@ import {
   DoesNotExistException,
   InvalidInputException,
 } from '../exception/CustomException';
-import FileService from './fileService';
 
 const attachmentRepository = AppDataSource.getRepository(Attachment);
 const userRepository = AppDataSource.getRepository(User);
@@ -74,9 +73,8 @@ export default class AttachmentService {
 
     await Promise.all(
       attachments.map(async (attachment) => {
-        attachment.signedUrl = await FileService.getSignedUrl(
-          attachment.fileName,
-        );
+        // Placeholder URL since AWS S3 has been removed
+        attachment.signedUrl = `placeholder-url-for-${attachment.fileName}`;
       }),
     );
 
@@ -111,7 +109,8 @@ export default class AttachmentService {
       throw new InvalidInputException('Invalid file name provided');
     }
 
-    await FileService.deleteFile(fileName);
+    // Placeholder file deletion since AWS S3 has been removed
+    console.log(`File deletion for ${fileName} has been removed from AWS S3`);
 
     const attachment = await attachmentRepository.findOne({
       where: { fileName: fileName },
