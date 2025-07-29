@@ -24,7 +24,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(routes);
 
-app.use((err: CustomException, _req: Request, res: Response) => {
+app.use((err: any, _req: Request, res: Response, _next: any) => {
   if (err instanceof CustomException) {
     ResponseUtil.customErrorResponse(res, err);
   } else {

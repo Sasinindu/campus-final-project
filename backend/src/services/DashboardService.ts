@@ -5,6 +5,7 @@ import { User } from '../entities/User';
 import { HealthMetric } from '../entities/HealthMetric';
 import { AIPrediction } from '../entities/AIPrediction';
 import { Alert } from '../entities/Alert';
+import { Medication } from '../entities/Medication';
 import {
   DashboardSummary,
   DoctorDashboardData,
@@ -19,6 +20,7 @@ export class DashboardService {
   private healthMetricRepository: Repository<HealthMetric>;
   private aiPredictionRepository: Repository<AIPrediction>;
   private alertRepository: Repository<Alert>;
+  private medicationRepository: Repository<Medication>;
 
   constructor() {
     this.patientRepository = AppDataSource.getRepository(Patient);
@@ -26,6 +28,7 @@ export class DashboardService {
     this.healthMetricRepository = AppDataSource.getRepository(HealthMetric);
     this.aiPredictionRepository = AppDataSource.getRepository(AIPrediction);
     this.alertRepository = AppDataSource.getRepository(Alert);
+    this.medicationRepository = AppDataSource.getRepository(Medication);
   }
 
   async getDashboardSummary(): Promise<DashboardSummary> {
@@ -67,14 +70,12 @@ export class DashboardService {
 
       const [
         myPatients,
-        pendingAppointments,
         recentPredictions,
         criticalMetrics,
       ] = await Promise.all([
         this.patientRepository.count({
           where: { primary_doctor_id: doctorId, is_active: true },
         }),
-        Promise.resolve(0), // Placeholder for appointments
         this.aiPredictionRepository.count({ where: { is_alert: true } }),
         Promise.resolve([]), // Placeholder for critical metrics
       ]);
@@ -82,7 +83,7 @@ export class DashboardService {
       return {
         ...summary,
         my_patients: myPatients,
-        pending_appointments: pendingAppointments,
+        pending_appointments: 0, // Removed appointments
         recent_predictions: recentPredictions,
         critical_metrics: criticalMetrics,
       };
@@ -96,7 +97,6 @@ export class DashboardService {
       const [
         recentMetrics,
         recentPredictions,
-        upcomingAppointments,
         activeMedications,
         alerts,
       ] = await Promise.all([
@@ -110,8 +110,12 @@ export class DashboardService {
           order: { created_at: 'DESC' },
           take: 5,
         }),
-        Promise.resolve([]), // Placeholder for appointments
-        Promise.resolve([]), // Placeholder for medications
+        this.medicationRepository.find({
+          where: { patient_id: patientId, is_active: true },
+          relations: ['prescribed_by_user'],
+          order: { created_at: 'DESC' },
+          take: 5,
+        }),
         this.alertRepository.find({
           where: { patient_id: patientId, is_read: false },
           order: { created_at: 'DESC' },
@@ -122,7 +126,7 @@ export class DashboardService {
       return {
         recent_metrics: recentMetrics,
         recent_predictions: recentPredictions,
-        upcoming_appointments: upcomingAppointments,
+        upcoming_appointments: [], // Removed appointments
         active_medications: activeMedications,
         alerts: alerts,
       };

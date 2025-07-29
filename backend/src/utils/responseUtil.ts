@@ -22,8 +22,8 @@ export class ResponseUtil {
       message,
     };
     console.log(
-      `[${new Date().toISOString()}] ${res.req.method} ${
-        res.req.originalUrl
+      `[${new Date().toISOString()}] ${res.req?.method || 'UNKNOWN'} ${
+        res.req?.originalUrl || 'UNKNOWN'
       } - SUCCESS`,
     );
     res.status(200).json(response);
@@ -41,8 +41,8 @@ export class ResponseUtil {
       message,
     };
     console.error(
-      `[${new Date().toISOString()}] ${res.req.method} ${
-        res.req.originalUrl
+      `[${new Date().toISOString()}] ${res.req?.method || 'UNKNOWN'} ${
+        res.req?.originalUrl || 'UNKNOWN'
       } - FAILED: ${message}`,
     );
     res.status(status).json(response);
@@ -55,8 +55,8 @@ export class ResponseUtil {
       message: ex.message,
     };
     console.error(
-      `[${new Date().toISOString()}] ${res.req.method} ${
-        res.req.originalUrl
+      `[${new Date().toISOString()}] ${res.req?.method || 'UNKNOWN'} ${
+        res.req?.originalUrl || 'UNKNOWN'
       } - FAILED: ${ex.message}`,
     );
     res.status(ex.statusCode).json(response);
@@ -70,8 +70,8 @@ export class ResponseUtil {
       error,
     };
     console.warn(
-      `[${new Date().toISOString()}] ${res.req.method} ${
-        res.req.originalUrl
+      `[${new Date().toISOString()}] ${res.req?.method || 'UNKNOWN'} ${
+        res.req?.originalUrl || 'UNKNOWN'
       } - VALIDATION FAILED: ${error}`,
     );
     res.status(400).json(response);
